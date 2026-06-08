@@ -1,5 +1,6 @@
 package com.pedro.task_manager.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -10,29 +11,39 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
-// Essa classe age como um "para-raios" de erros. Se algo der errado no Controller, cai aqui.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Trata os erros de validação (ex: mandou tarefa sem título)
+    // Captura quando o ID buscado não existe
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        ApiError erro = new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                "Recurso Não Encontrado",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+    }
+
+    // Captura falhas de validação dos DTOs (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> erros = new HashMap<>();
-        
-        // Pega todos os campos que deram erro e monta um JSON bonitinho
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ApiError erro = new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Erro de Validação de Dados",
+                "Um ou mais campos contêm dados inválidos.",
+                request.getRequestURI()
+        );
+
+        Map<String, String> camposComErro = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String nomeCampo = ((FieldError) error).getField();
             String mensagemErro = error.getDefaultMessage();
-            erros.put(nomeCampo, mensagemErro);
+            camposComErro.put(nomeCampo, mensagemErro);
         });
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erros);
-    }
+        erro.setValidacoes(camposComErro);
 
-    // Trata erros genéricos
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleErroGenerico(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Ocorreu um erro interno no servidor. Detalhes: " + ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
 }

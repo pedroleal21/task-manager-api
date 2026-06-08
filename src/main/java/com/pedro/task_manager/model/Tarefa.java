@@ -7,11 +7,12 @@ public class Tarefa {
     private String titulo;
     private String descricao;
     private boolean concluida;
+    private String prioridade; // Campo adicionado para a evolução da API (V2)
 
-    // Construtor
     public Tarefa() {
-        this.id = UUID.randomUUID().toString(); // Gera um ID único automaticamente
+        this.id = UUID.randomUUID().toString();
         this.concluida = false;
+        this.prioridade = "MEDIA"; // Padrão
     }
 
     // Getters e Setters
@@ -26,4 +27,7 @@ public class Tarefa {
     
     public boolean isConcluida() { return concluida; }
     public void setConcluida(boolean concluida) { this.concluida = concluida; }
+
+    public String getPrioridade() { return prioridade; }
+    public void setPrioridade(String prioridade) { this.prioridade = prioridade; }
 }
